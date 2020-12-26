@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <style type="text/css">
+
+        body{
+            margin:10px;
+        }
+
+        .xCont{
+            max-height: 500px;
+            position: fixed;
+            overflow-y: scroll;
+            overflow-x:hidden;
+        }
+
+        table {
+            border-collapse: collapse; /* Отображать двойные линии как одинарные */
+        }
+
+        thead {
+            position: sticky;
+            top:1px;
+        }
+
+        th {
+            background: #f1f1f1; /* Цвет фона */
+            text-align: left; /* Выравнивание по левому краю */
+            color: chocolate;
+            font-family: 'Yu Gothic UI',monospace;
+            font-size: 1em;
+        }
+        td, th {
+            border: 1px solid #a5a5a5; /* Параметры границы */
+            padding: 4px; /* Поля в ячейках */
+        }
+    </style>
+
+    <script src="tabView.js"></script>
+</head>
+<body>
+
+<div class='xCont'>
+    <table id="tabl">
+        <thead>
+        <tr><th>Номер</th><th>Имя</th></tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+<script>
+    render(document.getElementById('tabl'));
+</script>
+
+</body>
+</html>

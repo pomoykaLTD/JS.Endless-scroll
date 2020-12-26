@@ -1,0 +1,39 @@
+table {
+    border-collapse: collapse; /* Отображать двойные линии как одинарные */
+}
+
+
+table td:nth-child(1),
+table th:nth-child(1) { min-width: 150px; }
+
+table td:nth-child(2),
+table th:nth-child(2) { min-width: 150px; }
+
+th {
+    padding: 4px; /* Поля в ячейках */
+    background: #f1f1f1;
+    color: chocolate;
+    border: 1px solid #a5a5a5; /* Параметры границы */
+}
+td {
+    padding: 4px; /* Поля в ячейках */
+    border-bottom: 1px solid #a5a5a5;
+    border-top: none;
+    border-left: 1px solid #a5a5a5;
+    border-right: 1px solid #a5a5a5;
+}
+
+table thead tr {
+    display: block;
+    position: relative;
+}
+
+table tbody {
+    display: block;
+    /*overflow: auto;*/
+
+    overflow-y: scroll;
+    overflow-x:hidden;
+
+    height: 300px;
+}
