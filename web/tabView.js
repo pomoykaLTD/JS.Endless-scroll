@@ -1,21 +1,16 @@
 class tabView{
+    id;
     view;
     tbody;
-    id;
-    isLoad=false; //флаг начала загрузки данных
+    //isLoad=false; //флаг начала загрузки данных
     static MAX_ITEMS=100; //максимальное кол-во записей в таблице
-
-    static Tr(id=''){
-        let tr=document.createElement('tr');
-        if(id) tr.id=id;
-        return tr;
-    }
-    static Td(tr,text){
-        let td=document.createElement('td');
-        if(text) td.append(document.createTextNode(text));
-        tr.append(td);
-        return td;
-    }
+    _cash; //должно быть # - приватное поле, но нет поддержки mozilla. (_XXX - защищенное поле)
+    _preScrollTop=0; // для определения направление перелистывания
+    _scroll=(e)=>{
+        let direction=this._preScrollTop<this.tbody.scrollTop; // направление перелистывания
+        this._preScrollTop=this.tbody.scrollTop;
+        console.log('direction:'+direction+' scrollTop:'+this.tbody.scrollTop);
+    };
 
     constructor(el,id) {
         this.view=el;
@@ -24,31 +19,34 @@ class tabView{
     }
 
     render(caption=''){
-        this.setData();
-        this.view.replaceChild(this.tbody,this.view.getElementsByTagName('tbody')[0]);
         //this.setCaption(caption);
+        for(let rec of this.getData()){
+            this.tbody.append(tabView._renderTr(rec));
+        }
+        this.view.replaceChild(this.tbody,this.view.getElementsByTagName('tbody')[0]);
 
         //scrolling
-        let curView=this;
         let preScrollTop=0;
-        this.tbody.addEventListener('scroll',function(e){
-//console.log('0. isLoad:'+curView.isLoad);
-            if(curView.isLoad) return;
+        this.tbody.addEventListener('scroll',this._scroll);
 
-            let direction=preScrollTop<this.scrollTop; // направление перелистывания
-
-            if( direction && (this.clientHeight+100)>(this.scrollHeight-this.scrollTop) ){
-//console.log('1. direction:'+direction+' scrollTop:'+this.scrollTop);
-                //this.parentNode - <table>
-                curView.setData( Number(this.lastChild.id.substring(1)) , direction );
-            }else if( !direction && this.scrollTop<100 ){
-//console.log('2. direction:'+direction+' scrollTop:'+this.scrollTop);
-                curView.setData( Number(this.firstChild.id.substring(1)) , direction );
-//            }else{
-//console.log('3. direction:'+direction+', scrollTop='+this.scrollTop+', clientHeight'+this.clientHeight+', scrollHeight'+this.scrollHeight);
-            }
-            preScrollTop=this.scrollTop;
-        });
+//         this.tbody.addEventListener('scroll',function(e){
+// //console.log('0. isLoad:'+curView.isLoad);
+//             if(curView.isLoad) return;
+//
+//             let direction=preScrollTop<this.scrollTop; // направление перелистывания
+//
+//             if( direction && (this.clientHeight+100)>(this.scrollHeight-this.scrollTop) ){
+// //console.log('1. direction:'+direction+' scrollTop:'+this.scrollTop);
+//                 //this.parentNode - <table>
+//                 curView.setData( Number(this.lastChild.id.substring(1)) , direction );
+//             }else if( !direction && this.scrollTop<100 ){
+// //console.log('2. direction:'+direction+' scrollTop:'+this.scrollTop);
+//                 curView.setData( Number(this.firstChild.id.substring(1)) , direction );
+// //            }else{
+// //console.log('3. direction:'+direction+', scrollTop='+this.scrollTop+', clientHeight'+this.clientHeight+', scrollHeight'+this.scrollHeight);
+//             }
+//             preScrollTop=this.scrollTop;
+//         });
 
         //let txt=JSON.stringify(getData());
         //alert(txt);
@@ -59,8 +57,9 @@ class tabView{
         direction (true - вперед, false - назад) направление чтения данных
     */
     setData(n=0,direction=true){
-        this.isLoad=true; //начало загрузки
-        let data=this.getData(n,direction);
+        //this.isLoad=true; //начало загрузки
+        this._cash=this.getData(n,direction);
+
 console.log('подгрузка direction:'+direction+', '+this.tbody.childNodes.length+'+'+data.length);
         for(let i=0;i<data.length;i++){
 
@@ -91,25 +90,23 @@ console.log('удаление с конца '+this.tbody.childNodes.length);
         n - идентификатор первой записи
         direction (true - вперед, false - назад) направление чтения данных
     */
-    getData(n=0,direction){
-        let arr;
+    getData(n=0,direction=true){
+        let arr=new Array;
         if(direction){
-            arr=new Array(tabView.MAX_ITEMS);
-            for(let i=0;i<arr.length;i++){
+            for(let i=0;i<tabView.MAX_ITEMS;i++){
                 arr[i]={
                     id:'_'+(n+1+i),
                     name:'name'+(n+1+i)
                 }
             }
         }else if(n>1){
-            arr=new Array((tabView.MAX_ITEMS>n)?n-1:tabView.MAX_ITEMS);
-            for(let i=0;i<arr.length;i++){
+            for(let i=0;i<(tabView.MAX_ITEMS>n)?n-1:tabView.MAX_ITEMS;i++){
                 arr[i]={
                     id:'_'+(n-1-i),
                     name:'name'+(n-1-i)
                 }
             }
-        }else arr=new Array;
+        }
         return arr
     }
 
@@ -119,4 +116,23 @@ console.log('удаление с конца '+this.tbody.childNodes.length);
     //     el.append(document.createTextNode(caption));
     //     this.view.prepend(el);
     // }
+
+    static _renderTr(rec){
+        let tr=tabView._Tr(rec.id);
+        tr.append(tabView._Td(tr,rec.id));
+        tr.append(tabView._Td(tr,rec.name));
+        return tr
+    }
+    static _Tr(id=''){
+        let tr=document.createElement('tr');
+        if(id) tr.id=id;
+        return tr;
+    }
+    static _Td(tr,text){
+        let td=document.createElement('td');
+        if(text) td.append(document.createTextNode(text));
+        tr.append(td);
+        return td;
+    }
+
 }
