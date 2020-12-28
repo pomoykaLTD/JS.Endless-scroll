@@ -10,7 +10,7 @@
 </head>
 <body>
 
-    <table id="tabl">
+    <table id="t1">
         <thead>
         <tr><th>Номер</th><th>Имя</th></tr>
         </thead>
@@ -18,10 +18,11 @@
         </tbody>
     </table>
 
-    <div id="qwe"></div>
+<!--    <div id="log"></div>-->
 	
 <script>
-    render(document.getElementById('tabl'));
+    let tt=new tabView(document.getElementById('t1'),'t1');
+    tt.render('Новая таблица');
 </script>
 
 </body>
