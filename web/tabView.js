@@ -2,14 +2,49 @@ class tabView{
     id;
     view;
     tbody;
-    //isLoad=false; //флаг начала загрузки данных
     static MAX_ITEMS=100; //максимальное кол-во записей в таблице
-    _cash; //должно быть # - приватное поле, но нет поддержки mozilla. (_XXX - защищенное поле)
-    _preScrollTop=0; // для определения направление перелистывания
+    _cash=new Array; //должно быть # - приватное поле, но нет поддержки mozilla. (_XXX - защищенное поле)
+    _preScrollTop=0; // для определения направление
+    _preDirection; // для определения смены направления
     _scroll=(e)=>{
-        let direction=this._preScrollTop<this.tbody.scrollTop; // направление перелистывания
+        if(Math.abs(this._preScrollTop-this.tbody.scrollTop)<5) return; // некоторое допущение смещения скролла
+
+        let direction=this._preScrollTop<=this.tbody.scrollTop; // направление перелистывания
+        if( direction!=this._preDirection ){ // при смене направления очищаем кещ
+            this._cash=new Array;
+            console.log('очищен кеш, смена направления');
+        }
+
+        //триггеры подгрузки данных
+        if( direction && this.tbody.scrollHeight/this.tbody.scrollTop<1.3 && this._cash.length==0 ){
+            //подгрузка данных в конец списка
+            console.log('получение данных, прямое направление, scrollTop:'+this.tbody.scrollTop);
+            this._cash=this.getData(Number(this.tbody.lastChild.id),direction);
+        }else if( !direction && this.tbody.scrollHeight/this.tbody.scrollTop>10 && Number(this.tbody.firstChild.id)>1 && this._cash.length==0){
+            //подгрузка данных в начало списка
+            console.log('получение данных, обратное направление, scrollTop:'+this.tbody.scrollTop);
+            this._cash=this.getData(Number(this.tbody.firstChild.id),direction);
+        }
+
+        //достижение конца списка
+        if(direction && this._cash.length>0 && this.tbody.lastChild.getBoundingClientRect().top<this.tbody.getBoundingClientRect().bottom){
+            console.log('вставка в конец, удаление в начале');
+            this._cash.splice(0,Math.min(3,this._cash.length)).forEach( (rec, index, arr)=>{
+                this.tbody.append(tabView._renderTr(rec)); //добавление строки в конец
+                this.tbody.removeChild( this.tbody.firstChild ); //удаление строки в начале
+            });
+        }else
+        //достижение начала списка
+        if(!direction && this._cash.length>0 && this.tbody.scrollTop<5 ){ //this.tbody.scrollTop - должен быть 0, но не факт, потому допуск
+            console.log('вставка в начало, удаление с конца');
+            this._cash.splice(0,Math.min(3,this._cash.length)).forEach( (rec, index, arr)=>{
+                this.tbody.prepend(tabView._renderTr(rec)); //добавление строки в начало
+                this.tbody.removeChild( this.tbody.lastChild ); //удаление строки с конца
+            });
+        }
+
         this._preScrollTop=this.tbody.scrollTop;
-        console.log('direction:'+direction+' scrollTop:'+this.tbody.scrollTop);
+        this._preDirection=direction;
     };
 
     constructor(el,id) {
@@ -53,41 +88,41 @@ class tabView{
     }
 
     /*
-        n - идентификатор первой записи
+        n - номер первой записи
         direction (true - вперед, false - назад) направление чтения данных
     */
-    setData(n=0,direction=true){
-        //this.isLoad=true; //начало загрузки
-        this._cash=this.getData(n,direction);
-
-console.log('подгрузка direction:'+direction+', '+this.tbody.childNodes.length+'+'+data.length);
-        for(let i=0;i<data.length;i++){
-
-            let tr=tabView.Tr(data[i].id);
-            tr.append(tabView.Td(tr,data[i].id));
-            tr.append(tabView.Td(tr,data[i].name));
-
-            if(direction){
-                this.tbody.append(tr); //добавление строки в конец
-                if(this.tbody.childNodes.length>tabView.MAX_ITEMS*2){
-console.log('удаление с начала '+this.tbody.childNodes.length);
-                    this.tbody.removeChild( this.tbody.firstChild ); //удаление строки в начале
-                }
-             }else{
-                 this.tbody.prepend(tr); //добавление строки в начало
-                 if(this.tbody.childNodes.length>tabView.MAX_ITEMS*2){
-console.log('удаление с конца '+this.tbody.childNodes.length);
-                     this.tbody.removeChild( this.tbody.lastChild ); //удаление строки в конце
-                 }
-            }
-
-        }
-
-        this.isLoad=false; //окончание загрузки
-    }
+//     setData(n=0,direction=true){
+//         //this.isLoad=true; //начало загрузки
+//         this._cash=this.getData(n,direction);
+//
+// console.log('подгрузка direction:'+direction+', '+this.tbody.childNodes.length+'+'+data.length);
+//         for(let i=0;i<data.length;i++){
+//
+//             let tr=tabView.Tr(data[i].id);
+//             tr.append(tabView.Td(tr,data[i].id));
+//             tr.append(tabView.Td(tr,data[i].name));
+//
+//             if(direction){
+//                 this.tbody.append(tr); //добавление строки в конец
+//                 if(this.tbody.childNodes.length>tabView.MAX_ITEMS*2){
+// console.log('удаление с начала '+this.tbody.childNodes.length);
+//                     this.tbody.removeChild( this.tbody.firstChild ); //удаление строки в начале
+//                 }
+//              }else{
+//                  this.tbody.prepend(tr); //добавление строки в начало
+//                  if(this.tbody.childNodes.length>tabView.MAX_ITEMS*2){
+// console.log('удаление с конца '+this.tbody.childNodes.length);
+//                      this.tbody.removeChild( this.tbody.lastChild ); //удаление строки в конце
+//                  }
+//             }
+//
+//         }
+//
+//         this.isLoad=false; //окончание загрузки
+//     }
 
     /*
-        n - идентификатор первой записи
+        n - номер первой записи
         direction (true - вперед, false - назад) направление чтения данных
     */
     getData(n=0,direction=true){
@@ -95,14 +130,14 @@ console.log('удаление с конца '+this.tbody.childNodes.length);
         if(direction){
             for(let i=0;i<tabView.MAX_ITEMS;i++){
                 arr[i]={
-                    id:'_'+(n+1+i),
+                    id:(n+1+i),
                     name:'name'+(n+1+i)
                 }
             }
         }else if(n>1){
-            for(let i=0;i<(tabView.MAX_ITEMS>n)?n-1:tabView.MAX_ITEMS;i++){
+            for(let i=0;i<((tabView.MAX_ITEMS>n)?n-1:tabView.MAX_ITEMS);i++){
                 arr[i]={
-                    id:'_'+(n-1-i),
+                    id:(n-1-i),
                     name:'name'+(n-1-i)
                 }
             }
