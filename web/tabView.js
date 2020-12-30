@@ -3,7 +3,9 @@ class tabView{
     view;
     tbody;
     static MAX_ITEMS=100; //максимальное кол-во записей в таблице
-    _cash=new Array; //должно быть # - приватное поле, но нет поддержки mozilla. (_XXX - защищенное поле)
+    static SCROLL_ITEMS=4; //число прокручиваемых строк за раз
+    static SCROLL_OFFSET=10; //смещение скролла для бесконечной прокрутки
+    _cash=new Array; //должно быть #XXX - приватное поле, но нет поддержки mozilla. (_XXX - защищенное поле)
     _preScrollTop=0; // для определения направление
     _preDirection; // для определения смены направления
     _scroll=(e)=>{
@@ -29,18 +31,22 @@ class tabView{
         //достижение конца списка
         if(direction && this._cash.length>0 && this.tbody.lastChild.getBoundingClientRect().top<this.tbody.getBoundingClientRect().bottom){
             console.log('вставка в конец, удаление в начале');
-            this._cash.splice(0,Math.min(3,this._cash.length)).forEach( (rec, index, arr)=>{
+            this._cash.splice(0,Math.min(tabView.SCROLL_ITEMS,this._cash.length)).forEach( (rec, index, arr)=>{
                 this.tbody.append(tabView._renderTr(rec)); //добавление строки в конец
                 this.tbody.removeChild( this.tbody.firstChild ); //удаление строки в начале
             });
+
+            this.tbody.scrollTop=this.tbody.scrollHeight-this.tbody.clientHeight-tabView.SCROLL_OFFSET; //позиция скролла вблизи конца
         }else
         //достижение начала списка
         if(!direction && this._cash.length>0 && this.tbody.scrollTop<5 ){ //this.tbody.scrollTop - должен быть 0, но не факт, потому допуск
             console.log('вставка в начало, удаление с конца');
-            this._cash.splice(0,Math.min(3,this._cash.length)).forEach( (rec, index, arr)=>{
+            this._cash.splice(0,Math.min(tabView.SCROLL_ITEMS,this._cash.length)).forEach( (rec, index, arr)=>{
                 this.tbody.prepend(tabView._renderTr(rec)); //добавление строки в начало
                 this.tbody.removeChild( this.tbody.lastChild ); //удаление строки с конца
             });
+
+            this.tbody.scrollTop=tabView.SCROLL_OFFSET; //позиция скролла вблизи начала
         }
 
         this._preScrollTop=this.tbody.scrollTop;
@@ -54,7 +60,7 @@ class tabView{
     }
 
     render(caption=''){
-        //this.setCaption(caption);
+        this.setCaption(caption);
         for(let rec of this.getData()){
             this.tbody.append(tabView._renderTr(rec));
         }
@@ -63,67 +69,11 @@ class tabView{
         //scrolling
         let preScrollTop=0;
         this.tbody.addEventListener('scroll',this._scroll);
-
-//         this.tbody.addEventListener('scroll',function(e){
-// //console.log('0. isLoad:'+curView.isLoad);
-//             if(curView.isLoad) return;
-//
-//             let direction=preScrollTop<this.scrollTop; // направление перелистывания
-//
-//             if( direction && (this.clientHeight+100)>(this.scrollHeight-this.scrollTop) ){
-// //console.log('1. direction:'+direction+' scrollTop:'+this.scrollTop);
-//                 //this.parentNode - <table>
-//                 curView.setData( Number(this.lastChild.id.substring(1)) , direction );
-//             }else if( !direction && this.scrollTop<100 ){
-// //console.log('2. direction:'+direction+' scrollTop:'+this.scrollTop);
-//                 curView.setData( Number(this.firstChild.id.substring(1)) , direction );
-// //            }else{
-// //console.log('3. direction:'+direction+', scrollTop='+this.scrollTop+', clientHeight'+this.clientHeight+', scrollHeight'+this.scrollHeight);
-//             }
-//             preScrollTop=this.scrollTop;
-//         });
-
-        //let txt=JSON.stringify(getData());
-        //alert(txt);
     }
 
     /*
-        n - номер первой записи
-        direction (true - вперед, false - назад) направление чтения данных
-    */
-//     setData(n=0,direction=true){
-//         //this.isLoad=true; //начало загрузки
-//         this._cash=this.getData(n,direction);
-//
-// console.log('подгрузка direction:'+direction+', '+this.tbody.childNodes.length+'+'+data.length);
-//         for(let i=0;i<data.length;i++){
-//
-//             let tr=tabView.Tr(data[i].id);
-//             tr.append(tabView.Td(tr,data[i].id));
-//             tr.append(tabView.Td(tr,data[i].name));
-//
-//             if(direction){
-//                 this.tbody.append(tr); //добавление строки в конец
-//                 if(this.tbody.childNodes.length>tabView.MAX_ITEMS*2){
-// console.log('удаление с начала '+this.tbody.childNodes.length);
-//                     this.tbody.removeChild( this.tbody.firstChild ); //удаление строки в начале
-//                 }
-//              }else{
-//                  this.tbody.prepend(tr); //добавление строки в начало
-//                  if(this.tbody.childNodes.length>tabView.MAX_ITEMS*2){
-// console.log('удаление с конца '+this.tbody.childNodes.length);
-//                      this.tbody.removeChild( this.tbody.lastChild ); //удаление строки в конце
-//                  }
-//             }
-//
-//         }
-//
-//         this.isLoad=false; //окончание загрузки
-//     }
-
-    /*
-        n - номер первой записи
-        direction (true - вперед, false - назад) направление чтения данных
+        n - номер текущей строки;
+        direction (true - вперед, false - назад) - направление чтения данных
     */
     getData(n=0,direction=true){
         let arr=new Array;
@@ -145,12 +95,13 @@ class tabView{
         return arr
     }
 
-    // setCaption(caption) {
-    //     if (!caption) return;
-    //     let el = (this.view.caption = '') ? document.createElement('caption') : this.view.childNodes[0];
-    //     el.append(document.createTextNode(caption));
-    //     this.view.prepend(el);
-    // }
+    setCaption(caption='') {
+        if(caption=='') return;
+        let el=document.createElement('caption');
+        el.append(document.createTextNode(caption));
+        if(this.view.firstChild.tagName=='caption') this.view.replaceChild(el,this.view.firstChild)
+        else this.view.prepend(el);
+    }
 
     static _renderTr(rec){
         let tr=tabView._Tr(rec.id);
